@@ -7,57 +7,67 @@ import time, ezgmail, re, twitchbot_vars
 
 
 #TODO: input python scheduler logic so that the script keeps looking for email
-#TODO: Change verification to only look for unread emails
+class Twitchbot:
+    def __init__(self):
+        #This prevents me from having to dwnload the gecko self.driver
+        self.driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+        #im prolly gonna have to add vars later
+        vars = {}
+    
+    def search_emails(self):
+        self.threads = ezgmail.search('label:unread EAMaddenNFL')
+        if len(self.threads) > 0:
+            pass
 
-#This prevents me from having to dwnload the gecko driver
-driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
-#im prolly gonna have to add vars later
-vars = {}
-#open straight to the stream
-driver.get("https://www.twitch.tv/eamaddennfl")
- #change window size, because ive only tested at this size
-driver.set_window_size(1093, 960)
-#let stuff load 
-time.sleep(5)
-#scroll to the top(in case it loads you weird)
-driver.execute_script("window.scrollTo(0,0)")
-#click the login button
-driver.find_element(By.CSS_SELECTOR, ".eVigyo > .ScCoreButtonSecondary-sc-1qn4ixc-2 .Layout-sc-nxg1ff-0").click()
-driver.find_element(By.ID, "login-username").click()
-#send username specified in the other file
-driver.find_element(By.ID, "login-username").send_keys(twitchbot_vars.twitch_username)
-#send pwd
-driver.find_element(By.ID, "password-input").click()
-driver.find_element(By.ID, "password-input").send_keys(twitchbot_vars.twitch_password)
-#login
-driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
-#wait a sec for the email
-time.sleep(5)
-#search for the email in my gmail
-threads = ezgmail.search('twitch')
-#pull the body content of the twitch verification email
-t = str(threads[0].messages[0].snippet)
-#i only need the 6 digit number
-p = re.compile('\d{6}')
-s = p.search(t)
-confirm_code = s.group()
-#mark as read so it wont pull up in the search again
-threads[0].markAsRead()
-actions = ActionChains(driver)
-actions.send_keys(confirm_code[0])
-actions.perform()
-actions.send_keys(confirm_code[1])
-actions.perform()
-actions.send_keys(confirm_code[2])
-actions.perform()
-actions.send_keys(confirm_code[3])
-actions.perform()
-actions.send_keys(confirm_code[4])
-actions.perform()
-actions.send_keys(confirm_code[5])
-actions.perform()
+    def get_code(self):
+        #search for the email in my gmail
+        self.threads = ezgmail.search('label:unread twitch ')
+        #pull the body content of the twitch verification email
+        t = str(self.threads[0].messages[0].snippet)
+        #i only need the 6 digit number
+        self.regex_match = re.compile('\d{6}')
+        self.post_match = self.regex_match.search(t)
+        self.confirm_code = self.post_match.group()
+        #mark as read so it wont pull up in the search again
+        self.threads[0].markAsRead()
+        return self.confirm_code
 
-driver.execute_script("window.scrollTo(0,0)")
-driver.execute_script("window.scrollTo(0,0)")
-time.sleep(15)
-driver.quit()
+    def open_stream(self):
+        #open straight to the stream
+        self.driver.get("https://www.twitch.tv/eamaddennfl")
+        #change window size, because ive only tested at this size
+        self.driver.set_window_size(1093, 960)
+        #let stuff load 
+        time.sleep(5)
+        #scroll to the top(in case it loads you weird)
+        self.driver.execute_script("window.scrollTo(0,0)")
+        #click the login button
+        self.driver.find_element(By.CSS_SELECTOR, ".eVigyo > .ScCoreButtonSecondary-sc-1qn4ixc-2 .Layout-sc-nxg1ff-0").click()
+        self.driver.find_element(By.ID, "login-username").click()
+        #send username specified in the other file
+        self.driver.find_element(By.ID, "login-username").send_keys(twitchbot_vars.twitch_username)
+        #send pwd
+        self.driver.find_element(By.ID, "password-input").click()
+        self.driver.find_element(By.ID, "password-input").send_keys(twitchbot_vars.twitch_password)
+        #login
+        self.driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
+        #wait a sec for the email
+        time.sleep(5)
+        self.confirm_code = self.get_code()
+        self.actions = ActionChains(self.driver)
+        self.actions.send_keys(self.confirm_code[0])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[1])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[2])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[3])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[4])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[5])
+        self.actions.perform()
+        self.driver.execute_script("window.scrollTo(0,0)")
+        self.driver.execute_script("window.scrollTo(0,0)")
+        time.sleep(15)
+        self.driver.quit()

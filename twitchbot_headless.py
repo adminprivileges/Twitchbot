@@ -4,7 +4,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium import webdriver
-import os, time, random
+import os, time, random, twitchbot_vars
 
 chrome_options = Options()
 #chrome_options = webdriver.ChromeOptions()
@@ -35,11 +35,10 @@ driver.execute_script("window.scrollTo(0,0)")
 # 7 | click | id=login-username |  | 
 driver.find_element(By.ID, "login-username").click()
 # 8 | type | id=login-username | thadvillain | 
-driver.find_element(By.ID, "login-username").send_keys("thadvillain")
+driver.find_element(By.ID, "login-username").send_keys(twitchbot_vars.twitch_username)
 # 9 | click | id=password-input |  | 
 driver.find_element(By.ID, "password-input").click()
-# 10 | type | id=password-input | Tamale-Wispy5-Gently | 
-driver.find_element(By.ID, "password-input").send_keys("Tamale-Wispy5-Gently")
+driver.find_element(By.ID, "password-input").send_keys(twitchbot_vars.twitch_password)
 # 11 | click | css=.ibRTKs |  | 
 driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
 #play_button = driver.find_element_by_class_name("ytp-large-play-button")
