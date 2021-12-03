@@ -1,1 +1,7 @@
 venv
+credentials.json
+token.json
+geckodriver.log
+gmailtest.py
+twitchbot_vars.py
+
