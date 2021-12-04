@@ -14,13 +14,16 @@ class Twitchbot:
         self.driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
         #im prolly gonna have to add vars later
         vars = {}
+        #start the scheduler for the email search
         scheduler = BlockingScheduler()
+        #run the job every 5 mins
         scheduler.add_job(self.search_emails, 'interval', minutes=5)
         scheduler.start()  
     
     
     def search_emails(self):
-        self.threads = ezgmail.search('label:unread EAMaddenNFL')
+        #wait for emails about the EA madden stream
+        self.threads = ezgmail.search('label:unread EAMaddenNFL is live!')
         if len(self.threads) > 0:
             self.open_stream()
         else:
@@ -28,7 +31,7 @@ class Twitchbot:
 
     def get_code(self):
         #search for the email in my gmail
-        self.threads = ezgmail.search('label:unread twitch ')
+        self.threads = ezgmail.search('label:unread Your Twitch Login Verification Code')
         #pull the body content of the twitch verification email
         t = str(self.threads[0].messages[0].snippet)
         #i only need the 6 digit number
@@ -60,6 +63,7 @@ class Twitchbot:
         self.driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
         #wait a sec for the email
         time.sleep(5)
+        #enter the confirmation code
         self.confirm_code = self.get_code()
         self.actions = ActionChains(self.driver)
         self.actions.send_keys(self.confirm_code[0])
@@ -76,5 +80,8 @@ class Twitchbot:
         self.actions.perform()
         self.driver.execute_script("window.scrollTo(0,0)")
         self.driver.execute_script("window.scrollTo(0,0)")
-        time.sleep(3600)
+        time.sleep(28800)
         self.driver.quit()
+
+Twitch = Twitchbot()
+Twitch()

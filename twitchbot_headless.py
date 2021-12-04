@@ -1,48 +1,92 @@
-from selenium.webdriver import Chrome
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
 from selenium import webdriver
-import os, time, random, twitchbot_vars
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from apscheduler.schedulers.blocking import BlockingScheduler
+import time, ezgmail, re, twitchbot_vars
 
-chrome_options = Options()
-#chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--headless")
-#chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0")
-chrome_options.headless = True # also works
-driver = Chrome(executable_path=f"{os.getcwd()}/chromedriver", options=chrome_options)
-#ser = Service(f"{os.getcwd()}/chromedriver")
-#chrome_options = webdriver.ChromeOptions()
-#driver = webdriver.Chrome(service=ser, options=chrome_options)
-driver.get('https://www.twitch.tv/eamaddennfl')
-#driver.set_window_size(1093, 960)
-# 3 | runScript | window.scrollTo(0,0) |  | 
-#driver.execute_script("window.scrollTo(0,0)")
-# 4 | runScript | window.scrollTo(0,0) |  | 
-#driver.execute_script("window.scrollTo(0,0)")
-# 5 | runScript | window.scrollTo(0,0) |  | 
-driver.execute_script("window.scrollTo(0,0)")
-# 6 | click | css=.eVigyo > .ScCoreButtonSecondary-sc-1qn4ixc-2 .Layout-sc-nxg1ff-0 |  | 
-#driver.implicitly_wait(10) 
-#driver.find_element(By.CSS_SELECTOR, ".eVigyo > .ScCoreButtonSecondary-sc-1qn4ixc-2 .Layout-sc-nxg1ff-0").click()
 
-# 7 | click | id=login-username |  | 
-driver.find_element(By.ID, "login-username").click()
-# 8 | type | id=login-username | thadvillain | 
-driver.find_element(By.ID, "login-username").send_keys(twitchbot_vars.twitch_username)
-# 9 | click | id=password-input |  | 
-driver.find_element(By.ID, "password-input").click()
-driver.find_element(By.ID, "password-input").send_keys(twitchbot_vars.twitch_password)
-# 11 | click | css=.ibRTKs |  | 
-driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
-#play_button = driver.find_element_by_class_name("ytp-large-play-button")
-#play_button.click()
+#TODO: input python scheduler logic so that the script keeps looking for email
+class Twitchbot:
+    def __init__(self):
+        #Setting up headless options
+        options = Options()
+        options.headless = True
+        #This prevents me from having to dwnload the gecko self.driver
+        self.driver = webdriver.Firefox(options=options, executable_path=GeckoDriverManager().install())
+        #im prolly gonna have to add vars later
+        vars = {}
+        #start the scheduler for the email search
+        scheduler = BlockingScheduler()
+        #run the job every 5 mins
+        scheduler.add_job(self.search_emails, 'interval', minutes=5)
+        scheduler.start()  
+    
+    
+    def search_emails(self):
+        #wait for emails about the EA madden stream
+        self.threads = ezgmail.search('label:unread EAMaddenNFL is live!')
+        if len(self.threads) > 0:
+            self.open_stream()
+        else:
+            pass
 
-time.sleep(60)
-driver.quit()
+    def get_code(self):
+        #search for the email in my gmail
+        self.threads = ezgmail.search('label:unread Your Twitch Login Verification Code')
+        #pull the body content of the twitch verification email
+        t = str(self.threads[0].messages[0].snippet)
+        #i only need the 6 digit number
+        self.regex_match = re.compile('\d{6}')
+        self.post_match = self.regex_match.search(t)
+        self.confirm_code = self.post_match.group()
+        #mark as read so it wont pull up in the search again
+        self.threads[0].markAsRead()
+        return self.confirm_code
+
+    def open_stream(self):
+        #open straight to the stream
+        self.driver.get("https://www.twitch.tv/eamaddennfl")
+        print ("Headless Firefox Initialized")
+        #change window size, because ive only tested at this size
+        self.driver.set_window_size(1093, 960)
+        #let stuff load 
+        time.sleep(5)
+        #scroll to the top(in case it loads you weird)
+        self.driver.execute_script("window.scrollTo(0,0)")
+        #click the login button
+        self.driver.find_element(By.CSS_SELECTOR, ".eVigyo > .ScCoreButtonSecondary-sc-1qn4ixc-2 .Layout-sc-nxg1ff-0").click()
+        self.driver.find_element(By.ID, "login-username").click()
+        #send username specified in the other file
+        self.driver.find_element(By.ID, "login-username").send_keys(twitchbot_vars.twitch_username)
+        #send pwd
+        self.driver.find_element(By.ID, "password-input").click()
+        self.driver.find_element(By.ID, "password-input").send_keys(twitchbot_vars.twitch_password)
+        #login
+        self.driver.find_element(By.CSS_SELECTOR, ".ibRTKs").click()
+        #wait a sec for the email
+        time.sleep(5)
+        #enter the confirmation code
+        self.confirm_code = self.get_code()
+        self.actions = ActionChains(self.driver)
+        self.actions.send_keys(self.confirm_code[0])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[1])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[2])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[3])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[4])
+        self.actions.perform()
+        self.actions.send_keys(self.confirm_code[5])
+        self.actions.perform()
+        self.driver.execute_script("window.scrollTo(0,0)")
+        self.driver.execute_script("window.scrollTo(0,0)")
+        time.sleep(28800)
+        self.driver.quit()
+
+Twitch = Twitchbot()
+Twitch()
