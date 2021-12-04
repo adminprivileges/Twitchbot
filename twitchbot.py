@@ -3,6 +3,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
+from apscheduler.schedulers.blocking import BlockingScheduler
 import time, ezgmail, re, twitchbot_vars
 
 
@@ -13,10 +14,16 @@ class Twitchbot:
         self.driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
         #im prolly gonna have to add vars later
         vars = {}
+        scheduler = BlockingScheduler()
+        scheduler.add_job(self.search_emails, 'interval', minutes=5)
+        scheduler.start()  
+    
     
     def search_emails(self):
         self.threads = ezgmail.search('label:unread EAMaddenNFL')
         if len(self.threads) > 0:
+            self.open_stream()
+        else:
             pass
 
     def get_code(self):
@@ -69,5 +76,5 @@ class Twitchbot:
         self.actions.perform()
         self.driver.execute_script("window.scrollTo(0,0)")
         self.driver.execute_script("window.scrollTo(0,0)")
-        time.sleep(15)
+        time.sleep(3600)
         self.driver.quit()
