@@ -11,13 +11,6 @@ import time, ezgmail, re, twitchbot_vars
 #TODO: input python scheduler logic so that the script keeps looking for email
 class Twitchbot:
     def __init__(self):
-        #Setting up headless options
-        options = Options()
-        options.headless = True
-        #This prevents me from having to dwnload the gecko self.driver
-        self.driver = webdriver.Firefox(options=options, executable_path=GeckoDriverManager().install())
-        #im prolly gonna have to add vars later
-        vars = {}
         #start the scheduler for the email search
         scheduler = BlockingScheduler()
         #run the job every 5 mins
@@ -47,6 +40,13 @@ class Twitchbot:
         return self.confirm_code
 
     def open_stream(self):
+        #Setting up headless options
+        options = Options()
+        options.headless = True
+        #This prevents me from having to dwnload the gecko self.driver
+        self.driver = webdriver.Firefox(options=options, executable_path=GeckoDriverManager().install())
+        #im prolly gonna have to add vars later
+        vars = {}
         #open straight to the stream
         self.driver.get("https://www.twitch.tv/eamaddennfl")
         print ("Headless Firefox Initialized")
